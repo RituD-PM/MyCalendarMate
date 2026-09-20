@@ -1,0 +1,504 @@
+{
+  "name": "Scheduler Agent  Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request"
+            }
+          ]
+        }
+      },
+      "id": "b1d46d66-cdbd-49e9-b863-693ecd3c0df8",
+      "name": "When Called by Orchestrator",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1312,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "primary"
+        },
+        "timeMin": "={{ $now.toISO() }}",
+        "timeMax": "={{ $now.plus({ days: 7 }).toISO() }}",
+        "options": {
+          "orderBy": "startTime"
+        }
+      },
+      "id": "5f085826-d78a-466f-a8cb-99c4dae3c5a9",
+      "name": "Get Busy Times (Next 7 Days)",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -1136,
+        128
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "N1acAW10gm00gE63",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "busyEvents",
+        "options": {}
+      },
+      "id": "03242a73-f543-4b13-a935-96b68c34cb6a",
+      "name": "Combine Into One List",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Meeting request: {{ $('When Called by Orchestrator').item.json.request }}\n\nCurrent date/time: {{ $now.toISO() }} ({{ $now.format('cccc') }})\n\nExisting busy events for the next 7 days (raw Google Calendar data, may be an empty array if the calendar is free):\n{{ JSON.stringify($json.busyEvents) }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You schedule meetings and detect conflicts. Extract the meeting title, duration, and any attendee email addresses mentioned.\n\nIf meeting request is for the weekend (Saturday or Sunday), state that it is weekend and ask for confirmation\nIf meeting request is for unusual hours between 10pm and 7am, state that meeting is requested for unusual hours and ask for confirmation.\n\nDURATION: if the user states an explicit duration (e.g. '1 hour', '45 minutes', '30 min'), you MUST use that exact duration when computing startTime/endTime - do not default to 30 minutes unless the user truly gave no duration at all.\n\nEXACT TIME DETECTION: if the request names ANY specific clock time - '1pm', '3pm tomorrow', 'today at 1pm', 'this afternoon at 3', 'Friday 10am' - this is an exact-time request (requestedExactTime = true), REGARDLESS of which day it names, including 'today'. Only treat it as flexible/Case B when NO clock time is mentioned at all (e.g. 'sometime this week', 'find me a slot', 'sync with the team soon').\n\nCase A - exact time requested: check that exact window against every event in the busy list (compare start.dateTime/end.dateTime). If it overlaps ANY event, this is a conflict: set hasConflict to true, list every overlapping event in conflictingEvents (with its own title/start/end), set foundSlot to false, and still fill startTime/endTime with the originally-requested (conflicting) window for reference. Do not silently pick a different time yourself in this case - conflicts on an explicit request must be surfaced, not worked around, and a request with no conflict must be booked at the EXACT requested time, never at some other 'earliest available' slot.\n\nCase B - flexible request (no exact time given): search for the earliest non-conflicting slot during working hours (9:00-18:00, Mon-Fri, respecting any morning/afternoon preference) that fits the duration and does not overlap any busy event. If you find one, set foundSlot true, hasConflict false, conflictingEvents empty, and fill startTime/endTime with that slot. If you cannot find any non-conflicting slot in the next 7 business days (calendar is fully booked for the relevant window), set foundSlot false, hasConflict true, and put the busy events that make the window unworkable into conflictingEvents.\n\nOutput format - critical: respond with ONLY a single valid JSON object using EXACTLY these keys and no others: title, attendees, requestedExactTime, hasConflict, conflictingEvents, foundSlot, startTime, endTime, reasoning. The attendee list MUST be called \"attendees\" - never \"attendeeEmails\" or any other name. Do NOT add a separate \"duration\" field - duration is only reflected in the gap between startTime and endTime. No markdown code fences, no explanation text before or after the JSON. Every field must be present with the correct type even when unused (empty string \"\", empty array [], or false as appropriate) - never omit 'reasoning', even for a clean booking.\n\nExample of a correctly formatted response for an exact-time request with no conflict:\n{\"title\": \"Sync with Sarah\", \"attendees\": [\"sarah@company.com\"], \"requestedExactTime\": true, \"hasConflict\": false, \"conflictingEvents\": [], \"foundSlot\": true, \"startTime\": \"2026-09-22T13:00:00+05:30\", \"endTime\": \"2026-09-22T14:00:00+05:30\", \"reasoning\": \"User requested exactly 1pm-2pm today; that window is free on the calendar.\"}"
+        }
+      },
+      "id": "dcf5cf2b-9cf7-4bcc-80d2-ef37be389e7b",
+      "name": "Propose Slot",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -800,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "7cabfcef-74f1-43d9-8021-49c383a08028",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -752,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "F8dWILAPQbnLOYol",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"requestedExactTime\": { \"type\": \"boolean\" },\n    \"hasConflict\": { \"type\": \"boolean\" },\n    \"conflictingEvents\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"title\": { \"type\": \"string\" },\n          \"start\": { \"type\": \"string\" },\n          \"end\": { \"type\": \"string\" }\n        },\n        \"required\": [\"title\", \"start\", \"end\"]\n      }\n    },\n    \"foundSlot\": { \"type\": \"boolean\" },\n    \"title\": { \"type\": \"string\" },\n    \"attendees\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"startTime\": { \"type\": \"string\" },\n    \"endTime\": { \"type\": \"string\" },\n    \"reasoning\": { \"type\": \"string\" }\n  },\n  \"required\": [\"requestedExactTime\", \"hasConflict\", \"conflictingEvents\", \"foundSlot\", \"title\", \"attendees\", \"startTime\", \"endTime\", \"reasoning\"]\n}"
+      },
+      "id": "69365af4-ff8d-44dc-8d6d-cf07140aac9c",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -496,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output.hasConflict }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "699a3f3b-27fd-4f27-b863-8c62ae6996e0",
+      "name": "Has Conflict?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=New meeting request (raw text): {{ $('When Called by Orchestrator').item.json.request }}\n\nProposed new meeting: \"{{ $json.output.title }}\" ({{ $json.output.startTime }} - {{ $json.output.endTime }}), attendees: {{ $json.output.attendees.join(', ') || 'none listed' }}\n\nConflicting existing event(s):\n{{ JSON.stringify($json.output.conflictingEvents) }}\n\nAll busy events in the 7-day search window (use this to find genuinely free alternative slots):\n{{ JSON.stringify($('Combine Into One List').item.json.busyEvents) }}\n\nCurrent date/time: {{ $now.toISO() }} ({{ $now.format('cccc') }})",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a scheduling conflict resolver. A new meeting request collides with one or more existing calendar events, or no free slot exists anywhere in the requested window.\n\nStep 1 - Assess priority: compare the new meeting against each conflicting event using signals such as: attendees from outside domains or client/interview-sounding titles suggest higher external priority; meetings with more attendees are usually more costly to reschedule; recurring meetings (standups, 1:1s, syncs) are usually easier to move than one-off meetings; titles containing words like 'interview', 'client', 'deadline', 'urgent', 'exec', 'board' suggest higher priority. State in one or two sentences which meeting seems higher priority and why - make clear this is a judgment call based on limited information, not a guarantee.\n\nStep 2 - Propose 2-3 concrete rescheduling options. Each option must specify: which meeting should move (the new request, or the exact title of one of the existing conflicting events), a specific alternative start/end time that does NOT overlap any event in the full busy-events list provided, and a short rationale. Always include at least one option that moves the NEW meeting instead of the existing one, so the user can choose to leave their existing calendar untouched. Prefer suggesting the lower-priority meeting move first.\n\nDo not create, delete, or move any calendar event yourself - you are only recommending options for a human to choose from. Write a final friendly summary paragraph for the user combining the priority assessment and the numbered options.\n\nOutput format - critical: respond with ONLY a single valid JSON object matching the required schema. No markdown code fences, no explanation text before or after it, no extra keys. Every field is required and must be present with the correct type."
+        }
+      },
+      "id": "d546843d-c0f7-4aa1-8640-fd9de0a016c3",
+      "name": "Conflict Resolver",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -208,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"priorityAssessment\": { \"type\": \"string\" },\n    \"higherPriorityMeeting\": { \"type\": \"string\" },\n    \"rescheduleOptions\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"moveWhich\": { \"type\": \"string\" },\n          \"meetingTitle\": { \"type\": \"string\" },\n          \"suggestedStart\": { \"type\": \"string\" },\n          \"suggestedEnd\": { \"type\": \"string\" },\n          \"rationale\": { \"type\": \"string\" }\n        },\n        \"required\": [\"moveWhich\", \"meetingTitle\", \"suggestedStart\", \"suggestedEnd\", \"rationale\"]\n      }\n    },\n    \"summaryForUser\": { \"type\": \"string\" }\n  },\n  \"required\": [\"priorityAssessment\", \"higherPriorityMeeting\", \"rescheduleOptions\", \"summaryForUser\"]\n}"
+      },
+      "id": "537531eb-0037-438f-b68f-e46c73ed11a9",
+      "name": "Conflict Resolver Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cf1",
+              "name": "output",
+              "type": "string",
+              "value": "={{ $json.output.summaryForUser }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d398ea53-ea19-4bd8-9797-c19d98d11cd9",
+      "name": "Format Conflict Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output.foundSlot }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "cc74a9c3-e7d2-4be8-b15b-cc4f6606b9d6",
+      "name": "Slot Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "primary"
+        },
+        "start": "={{ $json.output.startTime }}",
+        "end": "={{ $json.output.endTime }}",
+        "additionalFields": {
+          "attendees": "={{ $json.output.attendees }}",
+          "conferenceDataUi": {
+            "conferenceDataValues": {
+              "conferenceSolution": "hangoutsMeet"
+            }
+          },
+          "summary": "={{ $json.output.title }}"
+        }
+      },
+      "id": "ddd0a9b9-af71-457d-83ed-55b0e41b267b",
+      "name": "Create Event with Meet Link",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        224
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "N1acAW10gm00gE63",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "o1",
+              "name": "output",
+              "type": "string",
+              "value": "=Booked \"{{ $json.summary }}\" for {{ $json.start.dateTime }} - {{ $json.end.dateTime }}. Google Meet link: {{ $json.hangoutLink || '(will appear on the event)' }}."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "535879d9-ec67-4fb0-a0ff-6278a567c195",
+      "name": "Format Confirmation",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "n1",
+              "name": "output",
+              "type": "string",
+              "value": "=I couldn't find or resolve a slot for \"{{ $json.output.title }}\". Reasoning: {{ $json.output.reasoning }} Try widening the timeframe or shortening the duration."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "40378792-a7ca-45e4-8d7c-8d5fb6349557",
+      "name": "Format No-Slot Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        32,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const item = $input.item.json;\nlet output = { ...item.output };\nconst rawRequest = ($('When Called by Orchestrator').item.json.request || '');\nconst busyEvents = $('Combine Into One List').item.json.busyEvents || [];\n\n// 1. Attendees: union of whatever the model found plus any email addresses actually in the text\nconst foundEmails = [...new Set((rawRequest.match(/[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}/g) || []))];\nconst modelEmails = Array.isArray(output.attendees) ? output.attendees : [];\noutput.attendees = [...new Set([...modelEmails, ...foundEmails])];\n\n// 2. Title: prefer an explicit \"subject:\"/\"title:\" marker in the text; else keep the model's\n//    non-empty title; else fall back to a visible placeholder (never leave it truly blank)\nconst subjectMatch = rawRequest.match(/(?:subject|title)\\s*[:\\-]\\s*\"?([^\".\\n]+)\"?/i);\nif (subjectMatch && subjectMatch[1] && subjectMatch[1].trim()) {\n  output.title = subjectMatch[1].trim();\n} else if (!output.title || !output.title.trim()) {\n  output.title = 'Meeting';\n}\n\n// 3. Exact time: if the text names a clock time, trust that over the model's time-of-day\n//    (keep the model's resolved DATE - relative-date resolution stays the LLM's job)\nconst timeMatch = rawRequest.match(/\\b(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)\\b/i);\nlet startDt = DateTime.fromISO(output.startTime);\nif (timeMatch && startDt.isValid) {\n  let hour = parseInt(timeMatch[1], 10);\n  const minute = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;\n  const meridiem = timeMatch[3].toLowerCase();\n  if (meridiem === 'pm' && hour < 12) hour += 12;\n  if (meridiem === 'am' && hour === 12) hour = 0;\n  startDt = startDt.set({ hour, minute, second: 0, millisecond: 0 });\n  output.requestedExactTime = true;\n}\n\n// 4. Duration: if the text states an explicit duration, trust that over the model's duration\nlet durationMinutes = null;\nconst durMatch = rawRequest.match(/(\\d+(?:\\.\\d+)?)\\s*(hour|hr|hours|minute|min|minutes)/i);\nif (durMatch) {\n  const n = parseFloat(durMatch[1]);\n  durationMinutes = /hour|hr/i.test(durMatch[2]) ? n * 60 : n;\n} else if (output.startTime && output.endTime) {\n  const s = DateTime.fromISO(output.startTime);\n  const e = DateTime.fromISO(output.endTime);\n  if (s.isValid && e.isValid) durationMinutes = e.diff(s, 'minutes').minutes;\n}\nif (!durationMinutes || durationMinutes <= 0) durationMinutes = 30;\n\nconst endDt = startDt.plus({ minutes: durationMinutes });\noutput.startTime = startDt.toISO();\noutput.endTime = endDt.toISO();\n\n// 5. Re-run conflict detection in code, against the real busy list, for the corrected window -\n//    this no longer depends on the model having judged the (possibly wrong) time it originally picked\nconst overlaps = busyEvents.filter(ev => {\n  const evStart = DateTime.fromISO(ev.start && ev.start.dateTime);\n  const evEnd = DateTime.fromISO(ev.end && ev.end.dateTime);\n  if (!evStart.isValid || !evEnd.isValid) return false;\n  return startDt < evEnd && endDt > evStart;\n});\n\nif (overlaps.length > 0) {\n  output.hasConflict = true;\n  output.foundSlot = false;\n  output.conflictingEvents = overlaps.map(ev => ({\n    title: ev.summary || '(untitled event)',\n    start: ev.start.dateTime,\n    end: ev.end.dateTime,\n  }));\n} else if (output.requestedExactTime) {\n  output.hasConflict = false;\n  output.foundSlot = true;\n  output.conflictingEvents = [];\n}\n// If this was never an exact-time request and no explicit time was found in the text, the model's\n// own flexible-search result (hasConflict/foundSlot/conflictingEvents) is left untouched.\n\nreturn { json: { ...item, output } };"
+      },
+      "id": "ab1c5523-59c2-4f51-9a40-37afe296622a",
+      "name": "Verify & Backfill from Request Text",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        128
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called by Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Get Busy Times (Next 7 Days)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Busy Times (Next 7 Days)": {
+      "main": [
+        [
+          {
+            "node": "Combine Into One List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Into One List": {
+      "main": [
+        [
+          {
+            "node": "Propose Slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Propose Slot",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Conflict Resolver",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Propose Slot",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conflict Resolver Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Conflict Resolver",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Propose Slot": {
+      "main": [
+        [
+          {
+            "node": "Verify & Backfill from Request Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Conflict?": {
+      "main": [
+        [
+          {
+            "node": "Conflict Resolver",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slot Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conflict Resolver": {
+      "main": [
+        [
+          {
+            "node": "Format Conflict Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slot Found?": {
+      "main": [
+        [
+          {
+            "node": "Create Event with Meet Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format No-Slot Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event with Meet Link": {
+      "main": [
+        [
+          {
+            "node": "Format Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify & Backfill from Request Text": {
+      "main": [
+        [
+          {
+            "node": "Has Conflict?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "561f0808-3b44-480b-b267-7d7d760f34eb",
+  "meta": {
+    "instanceId": "a2225c0a24240e2f9a3889d86fcd2cc2cf682145522a20dac22a4c7a3c26c3e7"
+  },
+  "nodeGroups": [],
+  "id": "WrgIoTR0qQjjFqLk",
+  "tags": []
+}

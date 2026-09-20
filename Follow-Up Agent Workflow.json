@@ -1,0 +1,271 @@
+{
+  "name": "Follow-Up Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request"
+            }
+          ]
+        }
+      },
+      "id": "a0da4239-0cf7-4f3b-b2f2-1038b409c58d",
+      "name": "When Called by Orchestrator",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -944,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.request }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are extracting a meeting recap from notes/transcript the user provides. Produce:\n- meetingTitle: best-guess title of the meeting.\n- attendeeEmails: any email addresses mentioned (array, empty if none).\n- emailBody: a ready-to-send recap email, written in plain text, containing (a) a 3-5 sentence neutral summary of what was discussed/decided, then (b) a clearly labeled 'Action Items' section listing each item as '- [Owner] Task (Due: date or \"unspecified\")'. Infer owners from names/emails mentioned near each task; use \"Unassigned\" if truly unclear. If no action items were mentioned, say so in that section instead of inventing any.\nIf the input has no clear meeting content, still return your best-effort structure rather than refusing."
+        }
+      },
+      "id": "487f382f-3117-4103-8383-8fd714c33c08",
+      "name": "Extract Recap",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -688,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "d56b8c16-3d28-4870-84dc-0f43f5aa6250",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -736,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "F8dWILAPQbnLOYol",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"meetingTitle\": { \"type\": \"string\" },\n    \"attendeeEmails\": { \"type\": \"array\", \"items\": { \"type\": \"string\" } },\n    \"emailBody\": { \"type\": \"string\" },\n    \"actionItemCount\": { \"type\": \"number\" }\n  },\n  \"required\": [\"meetingTitle\", \"attendeeEmails\", \"emailBody\", \"actionItemCount\"]\n}"
+      },
+      "id": "665d4e1b-a877-4925-b198-6d3d91400edb",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.output.attendeeEmails.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "920626a1-33fd-48fa-a846-dde43bbb314c",
+      "name": "Attendees Known?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.output.attendeeEmails.join(',') }}",
+        "subject": "=Recap: {{ $json.output.meetingTitle }}",
+        "message": "={{ $json.output.emailBody }}",
+        "options": {}
+      },
+      "id": "fbce4cd7-5663-4e12-9c67-ca3800b28bde",
+      "name": "Email Recap to Attendees",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "177b4e77-61c5-4cba-a580-274a8269c873",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qiVhL2k8mE6TOxHb",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "output",
+              "type": "string",
+              "value": "=Recap for \"{{ $json.output.meetingTitle }}\" sent to: {{ $json.output.attendeeEmails.join(', ') }}. {{ $json.output.actionItemCount }} action item(s) captured."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c760c97-98a9-4ad9-962e-66acdfaf5605",
+      "name": "Format Success Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f2",
+              "name": "output",
+              "type": "string",
+              "value": "=I captured the recap for \"{{ $json.output.meetingTitle }}\" with {{ $json.output.actionItemCount }} action item(s), but no attendee emails were provided so nothing was sent. Here it is:\n\n{{ $json.output.emailBody }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aa93d060-97d4-48b3-8c60-f4c43e1798b1",
+      "name": "Format No-Send Message",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        224
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called by Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Extract Recap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Recap",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Extract Recap",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Recap": {
+      "main": [
+        [
+          {
+            "node": "Attendees Known?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attendees Known?": {
+      "main": [
+        [
+          {
+            "node": "Email Recap to Attendees",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Format No-Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Recap to Attendees": {
+      "main": [
+        [
+          {
+            "node": "Format Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4074a95e-686d-4f0c-a7c8-b541a1b4da5d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a2225c0a24240e2f9a3889d86fcd2cc2cf682145522a20dac22a4c7a3c26c3e7"
+  },
+  "nodeGroups": [],
+  "id": "vComWbv3gDXAV6MF",
+  "tags": []
+}

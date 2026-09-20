@@ -1,0 +1,80 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.2.2 Chrome/134.0.6998.178 Electron/35.1.2 Safari/537.36" version="26.2.2">
+  <diagram name="Page-1" id="tPZgg7kNxAvB4GbrV431">
+    <mxGraphModel dx="1027" dy="516" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-1" target="WwoyOmI6RhXZdZc1LyDZ-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-1" value="User(Chat Trigger)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="140" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=0.397;exitY=1.017;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-2" target="WwoyOmI6RhXZdZc1LyDZ-12">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="160" y="440" as="sourcePoint" />
+            <mxPoint x="310" y="575" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-2" value="Briefing Tool" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="370" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-3" target="WwoyOmI6RhXZdZc1LyDZ-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-3" value="Email Tool" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="480" y="370" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0.569;exitY=1.05;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-4" target="WwoyOmI6RhXZdZc1LyDZ-12">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="720" y="450" as="sourcePoint" />
+            <mxPoint x="570" y="570" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="718" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-4" value="Follow-up Tool" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="650" y="370" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-5" target="WwoyOmI6RhXZdZc1LyDZ-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-5" value="Scheduling Tool" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="290" y="370" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-6" target="WwoyOmI6RhXZdZc1LyDZ-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-6" target="WwoyOmI6RhXZdZc1LyDZ-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-6" target="WwoyOmI6RhXZdZc1LyDZ-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-6" value="Orchestrator Agent" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="240" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-9" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.414;entryY=-0.028;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="460" y="301.68" as="sourcePoint" />
+            <mxPoint x="549.6800000000001" y="370.00000000000006" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="460" y="331.68" />
+              <mxPoint x="550" y="331.68" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="WwoyOmI6RhXZdZc1LyDZ-12" target="WwoyOmI6RhXZdZc1LyDZ-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-12" value="Aggregate + log" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="490" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="WwoyOmI6RhXZdZc1LyDZ-13" value="Return Response" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="380" y="590" width="120" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

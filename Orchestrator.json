@@ -1,0 +1,252 @@
+{
+  "name": "Assistant Orchestrator (No-Code)",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "2f9aad21-da82-46a4-a270-d4da42d7e507",
+      "name": "When Chat Message Received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        16
+      ],
+      "webhookId": "orchestrator-chat-webhook"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are the Orchestrator of CalendarMate made up of four specialist agents. Your ONLY job is to understand the user's intent and call the correct tool(s). Do not try to answer scheduling, email, or briefing questions yourself. \nFor scheduling questions redirect the requests to the scheduler tool and do not try to clarify on your own and respond back the answer from the tool.\nRouting rules:\n- \"Briefing Agent\" tool: use when the user asks for their daily summary/briefing, \"what's on my plate today\", overview of calendar + email, or asks about schedule conflicts.\n- \"Scheduler Agent\" tool: use when the user wants to book/find a meeting time, check availability, reschedule, or create a calendar event / Google Meet.\n- \"Email Agent\" tool: use when the user wants their unread emails read, summarized, or grouped by urgency/topic.\n- \"Follow-Up Agent\" tool: use when the user wants action items or a recap sent out after a meeting, or asks you to follow up with attendees.\n\nDo not try to answer based on assumption. Route the questions to the tools and only provide the answer from the tools.",
+          "returnIntermediateSteps": true
+        }
+      },
+      "id": "b6532ddc-63c9-4048-82a6-a34f51d37ad0",
+      "name": "Orchestrator Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        240,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "aa86158e-5f7a-4c03-bd47-3738dde1c0f9",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        256
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "F8dWILAPQbnLOYol",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 12
+      },
+      "id": "e6d6ac16-0e43-428e-ab2f-eb0f3a2224d0",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "name": "Briefing_Agent",
+        "description": "Call this to get the user's briefing for a specific day or date range: calendar events, unread email highlights, and any scheduling conflicts. Works for today, another single day (e.g. tomorrow, next Thursday), or a multi-day range (e.g. this week). Input: an optional free-text focus note, plus the resolved start/end of the period being asked about.",
+        "workflowId": {
+          "__rl": true,
+          "value": "rqjse0MDgz5x2fNh",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/rqjse0MDgz5x2fNh"
+        }
+      },
+      "id": "e868a4e0-6f7d-4e3a-9dbc-db7bd3b7623f",
+      "name": "Briefing Agent Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        528,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "name": "Scheduler_Agent",
+        "description": "Call this to check availability, propose meeting time slots, or create a calendar event with a Google Meet link. Input: the meeting request in natural language (attendees, duration, preferred timeframe, title).",
+        "workflowId": {
+          "__rl": true,
+          "value": "WrgIoTR0qQjjFqLk",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/WrgIoTR0qQjjFqLk"
+        }
+      },
+      "id": "d6905886-ea93-4031-aa65-61daed99822a",
+      "name": "Scheduler Agent Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        688,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "name": "Email_Agent",
+        "description": "Call this to read and summarize unread emails, grouped by urgency and topic. Input: an optional filter such as a sender, label, or time window (can be empty for 'all unread').",
+        "workflowId": {
+          "__rl": true,
+          "value": "a4t53FV3beA6bPr8",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/a4t53FV3beA6bPr8"
+        }
+      },
+      "id": "c2c05693-6c53-4c65-bd95-61042fc014e0",
+      "name": "Email Agent Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "name": "FollowUp_Agent",
+        "description": "Call this after a meeting to generate action items and send a recap summary to attendees. Input: meeting title/notes/transcript and, if known, the attendee emails.",
+        "workflowId": {
+          "__rl": true,
+          "value": "vComWbv3gDXAV6MF",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/vComWbv3gDXAV6MF"
+        }
+      },
+      "id": "017ab741-a75d-48e9-bd55-17942a71dcc5",
+      "name": "Follow-Up Agent Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        256
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Chat Message Received": {
+      "main": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Orchestrator Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Briefing Agent Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scheduler Agent Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up Agent Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Orchestrator Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "89ee0180-40b1-4f35-b1ce-4a9296ce5491",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a2225c0a24240e2f9a3889d86fcd2cc2cf682145522a20dac22a4c7a3c26c3e7"
+  },
+  "nodeGroups": [],
+  "id": "yJeWy0iLW3OLZ6B7",
+  "tags": []
+}

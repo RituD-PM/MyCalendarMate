@@ -1,0 +1,165 @@
+{
+  "name": "Email Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request"
+            }
+          ]
+        }
+      },
+      "id": "d48307f9-580e-4b61-ba44-f05694fc8837",
+      "name": "When Called by Orchestrator",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "q": "={{ 'is:unread ' + ($json.request || '') }}"
+        }
+      },
+      "id": "8c4b3e5e-7f80-4c75-b127-3bb0e4b858d6",
+      "name": "Get Unread Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        112
+      ],
+      "alwaysOutputData": true,
+      "webhookId": "146d8ab9-63e4-452d-832b-7ec1ffbed5c1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qiVhL2k8mE6TOxHb",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "emails",
+        "options": {}
+      },
+      "id": "fa6b4c2a-a7e5-4bcf-ae48-7653b44df70f",
+      "name": "Combine Into One List",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        512,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Unread emails (raw Gmail data, may be an empty array):\n{{ JSON.stringify($json.emails) }}",
+        "options": {
+          "systemMessage": "You write a scannable inbox digest from raw Gmail message data. For each email, judge:\n- urgency: needs action today, needs action this week, or FYI/no action.\n- topic: a short label (e.g. Billing, Client Request, Internal, Newsletter, Scheduling).\n\nThen output markdown with headers '🔴 Urgent', '🟡 Normal', '⚪ Low priority' - only include a section if it has items. Under each header, one bullet per email in the form: **Sender** - Subject - one-line summary of what it needs from the recipient (or 'no action needed'). Group similar/near-duplicate emails (e.g. multiple notifications from the same service) into a single bullet rather than repeating them. If the array is empty, just say the inbox is clear. Do not invent emails that are not in the data."
+        }
+      },
+      "id": "26c36afa-62dd-4e27-ba77-010a567ce208",
+      "name": "Classify, Group & Write Digest",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        752,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "018c1c67-99dd-4809-adfa-eb8cb3c33829",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "F8dWILAPQbnLOYol",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called by Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Get Unread Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unread Emails": {
+      "main": [
+        [
+          {
+            "node": "Combine Into One List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Into One List": {
+      "main": [
+        [
+          {
+            "node": "Classify, Group & Write Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify, Group & Write Digest",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5536de1b-5a2a-4d0d-afca-d16281e574eb",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a2225c0a24240e2f9a3889d86fcd2cc2cf682145522a20dac22a4c7a3c26c3e7"
+  },
+  "nodeGroups": [],
+  "id": "a4t53FV3beA6bPr8",
+  "tags": []
+}

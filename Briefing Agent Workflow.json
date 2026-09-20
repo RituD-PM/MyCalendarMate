@@ -1,0 +1,266 @@
+{
+  "name": "Briefing Agent Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "request"
+            }
+          ]
+        }
+      },
+      "id": "a801c5a1-27c8-46d9-9089-545bfd32ecea",
+      "name": "When Called by Orchestrator",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "request",
+              "type": "string",
+              "value": "={{ $json.request || 'Standard daily briefing' }}"
+            },
+            {
+              "id": "p2",
+              "name": "dayStart",
+              "type": "string",
+              "value": "={{ $now.startOf('day').toISO() }}"
+            },
+            {
+              "id": "p3",
+              "name": "dayEnd",
+              "type": "string",
+              "value": "={{ $now.endOf('day').toISO() }}"
+            },
+            {
+              "id": "p4",
+              "name": "userEmail",
+              "type": "string",
+              "value": "rituparnadatta644@gmail.com"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a4bfb814-c3bf-411d-8e11-5598cb212258",
+      "name": "Prepare Params",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        96,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "rituparnadatta644@gmail.com",
+          "mode": "list",
+          "cachedResultName": "rituparnadatta644@gmail.com"
+        },
+        "timeMin": "={{ $json.dayStart }}",
+        "timeMax": "={{ $json.dayEnd }}",
+        "options": {
+          "orderBy": "startTime"
+        }
+      },
+      "id": "61b8c3ba-54d2-4ced-932c-30ef2e24276e",
+      "name": "Get Today's Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        368,
+        -64
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "N1acAW10gm00gE63",
+          "name": "Google Calendar account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 30,
+        "filters": {
+          "q": "is:unread newer_than:1d"
+        }
+      },
+      "id": "c9d5f9dc-c1e8-46ef-89d3-1d42c9d8b912",
+      "name": "Get Unread Emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        368,
+        144
+      ],
+      "alwaysOutputData": true,
+      "webhookId": "693b64aa-d455-434b-9ed8-80aeb600077d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qiVhL2k8mE6TOxHb",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "f3d420df-f565-425f-a8e6-b79947a7aa78",
+      "name": "Sync Point",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        624,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Today's calendar events (raw Google Calendar data, may be empty array):\n{{ JSON.stringify($('Get Today\\'s Events').all().map(i => i.json)) }}\n\nUnread emails (raw Gmail data, may be empty array):\n{{ JSON.stringify($('Get Unread Emails').all().map(i => i.json)) }}\n\nUser's focus request: {{ $('Prepare Params').item.json.request }}",
+        "options": {
+          "systemMessage": "You write concise, friendly daily briefings from raw Google Calendar and Gmail data.\n\nFirst, carefully check the calendar events for time conflicts: compare each event's start/end time (in the start.dateTime / end.dateTime fields) against every other event and note any that overlap.\n\nThen structure your reply as:\n1. A one-line greeting and headline (number of meetings today, and whether any conflict).\n2. 'Schedule' - bullet list of today's events with time ranges (convert to a readable local time). If you found any overlapping events, clearly call them out by name and suggest the user resolve it.\n3. 'Inbox' - a short bullet summary of the unread emails, grouping similar ones together rather than listing every single one if there are many. Highlight anything that sounds urgent.\n4. 'Suggested priorities' - 2-3 bullets on what to tackle first today.\nKeep it under 200 words. Never invent events or emails that are not in the data provided. If an array is empty, say so plainly (e.g. 'no meetings today' / 'inbox is clear')."
+        }
+      },
+      "id": "954bb8ef-b0c1-40d3-b899-9a130783499f",
+      "name": "Generate Daily Briefing",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        864,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "options": {}
+      },
+      "id": "34648484-dfae-472c-af42-75717377641d",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        864,
+        240
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "F8dWILAPQbnLOYol",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Called by Orchestrator": {
+      "main": [
+        [
+          {
+            "node": "Prepare Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Params": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Events",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Unread Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Events": {
+      "main": [
+        [
+          {
+            "node": "Sync Point",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Unread Emails": {
+      "main": [
+        [
+          {
+            "node": "Sync Point",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Sync Point": {
+      "main": [
+        [
+          {
+            "node": "Generate Daily Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Daily Briefing",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Daily Briefing": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "88611138-33b8-41b6-bbc7-2d9a09195336",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a2225c0a24240e2f9a3889d86fcd2cc2cf682145522a20dac22a4c7a3c26c3e7"
+  },
+  "nodeGroups": [],
+  "id": "rqjse0MDgz5x2fNh",
+  "tags": []
+}
