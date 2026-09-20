@@ -43,7 +43,4 @@ These are real, currently-unaddressed gaps found by direct testing during develo
 - **No observability/tracing is wired up.** The Orchestrator's output currently connects to nothing (`"Orchestrator Agent": {"main": [[]]}`). This does **not** satisfy the assignment's observability requirement as-is — connect a LangSmith or Langfuse integration, or at minimum reinstate a trace-logging step, before treating evaluation as complete.
 - **Scheduler cannot update an existing calendar event** — only create. There is no event-ID tracking across turns, so a "fix the time on that meeting" follow-up request has no workflow path to succeed.
 - **No per-user authorization boundary.** All five workflows currently point at one person's Google account; this only works for a single-user pilot, not the 50-user rollout target, until each user's requests are scoped to their own calendar/inbox.
-
-## Models and cost
-
-All five workflows run **gpt-5-mini** end-to-end (Orchestrator and all four specialists). See `CalendarMate_Cost_and_Evaluation_Strategy.md` for the per-user-per-day cost estimate and the trade-offs of this single-model choice.
+ 
